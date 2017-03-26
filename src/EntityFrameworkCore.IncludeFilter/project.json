@@ -1,12 +1,16 @@
-﻿{
+{
   "version": "1.0.0-*",
 
   "dependencies": {
+    "Microsoft.EntityFrameworkCore": "1.0.0",
+    "Microsoft.EntityFrameworkCore.Relational": "1.0.0",
+    "Microsoft.EntityFrameworkCore.SqlServer": "1.0.0",
+    "Microsoft.EntityFrameworkCore.SqlServer.Design": "1.0.0",
     "NETStandard.Library": "1.6.0"
   },
 
   "frameworks": {
-    "netstandard1.6": {
+    "netstandard1.3": {
       "imports": "dnxcore50"
     }
   }
