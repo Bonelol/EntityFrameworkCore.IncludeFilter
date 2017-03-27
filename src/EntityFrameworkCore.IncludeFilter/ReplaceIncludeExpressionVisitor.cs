@@ -39,8 +39,7 @@ namespace EntityFrameworkCore.IncludeFilter
         private readonly INavigationExpressionCollection _collection;
 
         /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
+        ///     From IncludeExpressionVisitor in EF core
         /// </summary>
         public ReplaceIncludeExpressionVisitor(
             ISelectExpressionFactory selectExpressionFactory,
@@ -71,8 +70,7 @@ namespace EntityFrameworkCore.IncludeFilter
         }
 
         /// <summary>
-        ///     This API supports the Entity Framework Core infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
+        ///     From IncludeExpressionVisitor in EF core
         /// </summary>
         protected override Expression VisitMethodCall(MethodCallExpression methodCallExpression)
         {
@@ -339,11 +337,14 @@ namespace EntityFrameworkCore.IncludeFilter
 
                         AddToPredicate(targetSelectExpression, existsPredicateExpression);
 
-                        var p = _collection.TryGet(navigation);
+                        //Add more prediction
+                        if (_collection.HasKey(navigation) && _collection[navigation].Count > 0)
+                        {
+                            var expressions = _collection[navigation];
+                            var alias = TryParseExpression(targetTableExpression, targetEntityType, expressions);
+                            AddToPredicate(targetSelectExpression, alias);
+                        }
 
-                        var alias = TryParseExpression(targetTableExpression, targetEntityType, p);
-
-                        AddToPredicate(targetSelectExpression, alias);
                         AddToPredicate(subqueryExpression, BuildJoinEqualityExpression(navigation, targetTableExpression, subqueryTable, querySource));
 
                         subqueryExpression.Predicate
@@ -392,15 +393,6 @@ namespace EntityFrameworkCore.IncludeFilter
                                 querySource);
                     }
 
-                    ////add filter
-                    //var expressions = _collection.TryGet(navigation);
-
-                    //if (expressions != null)
-                    //{
-                    //    var expression = expressions.First();
-                    //    targetSelectExpression.Predicate = expression;// Expression.AndAlso(targetSelectExpression.Predicate, expression);
-                    //}
-
                     targetSelectExpression.Predicate
                         = compositePredicateExpressionVisitor
                             .Visit(targetSelectExpression.Predicate);
@@ -428,126 +420,9 @@ namespace EntityFrameworkCore.IncludeFilter
 
         private Expression TryParseExpression(TableExpressionBase table, IEntityType entityType,  ICollection<Expression> expressions)
         {
-            var expression = expressions.FirstOrDefault();
-
-            if (expression != null)
-            {
-                var visitor = new PrivateParseExpressionVisitor(table, entityType);
-                return visitor.Visit(expression);
-            }
-
-            var column = new ColumnExpression("Active", typeof(bool), table);
-            var alias = new AliasExpression(column);
-
-            return alias;
-        }
-
-        class PrivateParseExpressionVisitor : ExpressionVisitor
-        {
-            private readonly IEntityType _entityType;
-            private readonly TableExpressionBase _table;
-            private readonly IEnumerable<IProperty> _properties;
-
-            public PrivateParseExpressionVisitor(TableExpressionBase table, IEntityType entityType)
-            {
-                _table = table;
-                _entityType = entityType;
-                _properties = _entityType.GetProperties();
-            }
-
-            public override Expression Visit(Expression node)
-            {
-                switch (node.NodeType)
-                {
-                    case ExpressionType.Add:
-                        break;
-                    case ExpressionType.AddAssign:
-                        break;
-                    case ExpressionType.And:
-                        break;
-                    case ExpressionType.AndAlso:
-                        break;
-                    case ExpressionType.Conditional:
-                        break;
-                    case ExpressionType.Constant:
-                        break;
-                    case ExpressionType.Divide:
-                        break;
-                    case ExpressionType.DivideAssign:
-                        break;
-                    case ExpressionType.Dynamic:
-                        break;
-                    case ExpressionType.Equal:
-                        break;
-                    case ExpressionType.GreaterThan:
-                        break;
-                    case ExpressionType.GreaterThanOrEqual:
-                        break;
-                    case ExpressionType.LessThan:
-                        break;
-                    case ExpressionType.LessThanOrEqual:
-                        break;
-                    case ExpressionType.MemberAccess:
-                        break;
-                    case ExpressionType.Multiply:
-                        break;
-                    case ExpressionType.MultiplyAssign:
-                        break;
-                    case ExpressionType.Negate:
-                        break;
-                    case ExpressionType.NegateChecked:
-                        break;
-                    case ExpressionType.Not:
-                        break;
-                    case ExpressionType.NotEqual:
-                        break;
-                    case ExpressionType.Or:
-                        break;
-                    case ExpressionType.OrElse:
-                        break;
-                    case ExpressionType.UnaryPlus:
-                        break;
-                }
-
-                return base.Visit(node);
-            }
-
-            protected override Expression VisitBinary(BinaryExpression node)
-            {
-                var left = Visit(node.Left);
-                var right = Visit(node.Right);
-
-                switch (node.NodeType)
-                {
-                    case ExpressionType.AndAlso:
-                        return Expression.AndAlso(left, right);
-                    case ExpressionType.Equal:
-                        return Expression.Equal(left, right);
-                    case ExpressionType.GreaterThan:
-                        return Expression.GreaterThan(left, right);
-                    case ExpressionType.GreaterThanOrEqual:
-                        return Expression.GreaterThanOrEqual(left, right);
-                    case ExpressionType.LessThan:
-                        return Expression.LessThan(left, right);
-                    case ExpressionType.LessThanOrEqual:
-                        return Expression.LessThanOrEqual(left, right);
-                    case ExpressionType.NotEqual:
-                        return Expression.NotEqual(left, right);
-                    case ExpressionType.OrElse:
-                        return Expression.OrElse(left, right);
-                }
-
-                throw new NotImplementedException();
-            }
-
-            protected override Expression VisitMember(MemberExpression node)
-            {
-                var property = _properties.First(p => p.Name == node.Member.Name);
-                var columnAttr = node.Member.CustomAttributes.FirstOrDefault(a => a.AttributeType == typeof(ColumnAttribute));
-                var columnName = columnAttr?.ConstructorArguments[0].Value.ToString() ?? node.Member.Name;
-                var column = new ColumnExpression(columnName, property, _table);
-                return new AliasExpression(column);
-            }
+            var expression = expressions.First();
+            var visitor = new PrivateParseExpressionVisitor(table, entityType);
+            return visitor.Visit(expression);
         }
 
         private JoinExpressionBase AdjustJoinExpression(
@@ -658,14 +533,14 @@ namespace EntityFrameworkCore.IncludeFilter
 
                 if (foreignKeyColumnExpression.Type != primaryKeyExpression.Type)
                 {
-                    if (foreignKeyColumnExpression.Type.IsNullableType2()
-                        && !primaryKeyExpression.Type.IsNullableType2())
+                    if (foreignKeyColumnExpression.Type.IsNullableType()
+                        && !primaryKeyExpression.Type.IsNullableType())
                     {
                         primaryKeyExpression
                             = Expression.Convert(primaryKeyExpression, foreignKeyColumnExpression.Type);
                     }
-                    else if (primaryKeyExpression.Type.IsNullableType2()
-                             && !foreignKeyColumnExpression.Type.IsNullableType2())
+                    else if (primaryKeyExpression.Type.IsNullableType()
+                             && !foreignKeyColumnExpression.Type.IsNullableType())
                     {
                         foreignKeyColumnExpression
                             = Expression.Convert(foreignKeyColumnExpression, primaryKeyColumnExpression.Type);
@@ -752,55 +627,117 @@ namespace EntityFrameworkCore.IncludeFilter
                     .Select(ordering => ((ordering.Expression as AliasExpression)?.Expression as ColumnExpression)?.Property)
                     .Any(property => !properties.Contains(property));
         }
-    }
 
-    public static class TypeHelper
-    {
-        //internal static bool IsEnumerableType(Type enumerableType)
-        //{
-        //    return FindGenericType(typeof(IEnumerable<>), enumerableType) != null;
-        //}
-        //internal static bool IsKindOfGeneric(Type type, Type definition)
-        //{
-        //    return FindGenericType(definition, type) != null;
-        //}
-        //internal static Type GetElementType(Type enumerableType)
-        //{
-        //    Type ienumType = FindGenericType(typeof(IEnumerable<>), enumerableType);
-        //    if (ienumType != null)
-        //        return ienumType.GetGenericArguments()[0];
-        //    return enumerableType;
-        //}
-        //internal static Type FindGenericType(Type definition, Type type)
-        //{
-        //    while (type != null && type != typeof(object))
-        //    {
-        //        if (type.IsGenericType && type.GetGenericTypeDefinition() == definition)
-        //            return type;
-        //        if (definition.IsInterface)
-        //        {
-        //            foreach (Type itype in type.GetInterfaces())
-        //            {
-        //                Type found = FindGenericType(definition, itype);
-        //                if (found != null)
-        //                    return found;
-        //            }
-        //        }
-        //        type = type.BaseType;
-        //    }
-        //    return null;
-        //}
-        internal static bool IsNullableType22(this Type type)
+
+        /// <summary>
+        /// Convert expression to what SqlQuerySqlGenerator can read
+        /// </summary>
+        class PrivateParseExpressionVisitor : ExpressionVisitor
         {
-            return type != null && type.GenericTypeArguments.Length > 0 && type.GetGenericTypeDefinition() == typeof(Nullable<>);
-        }
-        public static Type GetNonNullableType(this Type type)
-        {
-            if (IsNullableType22(type))
+            private readonly IEntityType _entityType;
+            private readonly TableExpressionBase _table;
+            private readonly IEnumerable<IProperty> _properties;
+
+            public PrivateParseExpressionVisitor(TableExpressionBase table, IEntityType entityType)
             {
-                return type.GetGenericArguments()[0];
+                _table = table;
+                _entityType = entityType;
+                _properties = _entityType.GetProperties();
             }
-            return type;
+
+            public override Expression Visit(Expression node)
+            {
+                //switch (node.NodeType)
+                //{
+                //    case ExpressionType.Add:
+                //        break;
+                //    case ExpressionType.AddAssign:
+                //        break;
+                //    case ExpressionType.And:
+                //        break;
+                //    case ExpressionType.AndAlso:
+                //        break;
+                //    case ExpressionType.Conditional:
+                //        break;
+                //    case ExpressionType.Constant:
+                //        break;
+                //    case ExpressionType.Divide:
+                //        break;
+                //    case ExpressionType.DivideAssign:
+                //        break;
+                //    case ExpressionType.Dynamic:
+                //        break;
+                //    case ExpressionType.Equal:
+                //        break;
+                //    case ExpressionType.GreaterThan:
+                //        break;
+                //    case ExpressionType.GreaterThanOrEqual:
+                //        break;
+                //    case ExpressionType.LessThan:
+                //        break;
+                //    case ExpressionType.LessThanOrEqual:
+                //        break;
+                //    case ExpressionType.MemberAccess:
+                //        break;
+                //    case ExpressionType.Multiply:
+                //        break;
+                //    case ExpressionType.MultiplyAssign:
+                //        break;
+                //    case ExpressionType.Negate:
+                //        break;
+                //    case ExpressionType.NegateChecked:
+                //        break;
+                //    case ExpressionType.Not:
+                //        break;
+                //    case ExpressionType.NotEqual:
+                //        break;
+                //    case ExpressionType.Or:
+                //        break;
+                //    case ExpressionType.OrElse:
+                //        break;
+                //    case ExpressionType.UnaryPlus:
+                //        break;
+                //}
+
+                return base.Visit(node);
+            }
+
+            protected override Expression VisitBinary(BinaryExpression node)
+            {
+                var left = Visit(node.Left);
+                var right = Visit(node.Right);
+
+                switch (node.NodeType)
+                {
+                    case ExpressionType.AndAlso:
+                        return Expression.AndAlso(left, right);
+                    case ExpressionType.Equal:
+                        return Expression.Equal(left, right);
+                    case ExpressionType.GreaterThan:
+                        return Expression.GreaterThan(left, right);
+                    case ExpressionType.GreaterThanOrEqual:
+                        return Expression.GreaterThanOrEqual(left, right);
+                    case ExpressionType.LessThan:
+                        return Expression.LessThan(left, right);
+                    case ExpressionType.LessThanOrEqual:
+                        return Expression.LessThanOrEqual(left, right);
+                    case ExpressionType.NotEqual:
+                        return Expression.NotEqual(left, right);
+                    case ExpressionType.OrElse:
+                        return Expression.OrElse(left, right);
+                }
+
+                throw new NotImplementedException();
+            }
+
+            protected override Expression VisitMember(MemberExpression node)
+            {
+                var property = _properties.First(p => p.Name == node.Member.Name);
+                var columnAttr = node.Member.CustomAttributes.FirstOrDefault(a => a.AttributeType == typeof(ColumnAttribute));
+                var columnName = columnAttr?.ConstructorArguments[0].Value.ToString() ?? node.Member.Name;
+                var column = new ColumnExpression(columnName, property, _table);
+                return new AliasExpression(column);
+            }
         }
     }
 }

@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore.Query.Expressions;
 using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors;
 using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal;
 using Microsoft.EntityFrameworkCore.Query.Internal;
+using Microsoft.EntityFrameworkCore.Query.ResultOperators.Internal;
 using Remotion.Linq;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.StreamedData;
@@ -64,7 +65,7 @@ namespace EntityFrameworkCore.IncludeFilter
 
             var includeSpecifications
                 = QueryCompilationContext.QueryAnnotations
-                    .OfType<ReplaceIncludeResultOperator>()
+                    .OfType<IncludeResultOperator>()
                     .Select(includeResultOperator =>
                     {
                         var navigationPath
@@ -82,7 +83,7 @@ namespace EntityFrameworkCore.IncludeFilter
                                                     includeResultOperator.NavigationPropertyPath));
                                     }
 
-                                    return BindChainedNavigations2(
+                                    return BindChainedNavigations(
                                             navigations,
                                             includeResultOperator)
                                             .ToArray();
@@ -112,8 +113,8 @@ namespace EntityFrameworkCore.IncludeFilter
         /// <summary>
         ///    Copyed from EntityFramework Core source code
         /// </summary>
-        private IEnumerable<INavigation> BindChainedNavigations2(
-            IEnumerable<INavigation> boundNavigations, ReplaceIncludeResultOperator includeResultOperator)
+        private IEnumerable<INavigation> BindChainedNavigations(
+            IEnumerable<INavigation> boundNavigations, IncludeResultOperator includeResultOperator)
         {
             var boundNavigationsList = boundNavigations.ToList();
 
@@ -132,27 +133,13 @@ namespace EntityFrameworkCore.IncludeFilter
                 }
             }
 
-            // match expressions to navigation
-            var f = boundNavigationsList.First();
-            var expressions = includeResultOperator.Expressions;
+            var replaced = includeResultOperator as ReplaceIncludeResultOperator;
 
-            var expr = expressions.FirstOrDefault();
-
-            if (expr != null)
+            if (replaced != null)
             {
-                var visitor = _sqlTranslatingExpressionVisitorFactory.Create(this);
-                var translated = visitor.Visit(expr);
-
-                this.ExpressionCollection[f] = new List<Expression> {translated};
-            }
-
-            if (ExpressionCollection.HasKey(f))
-            {
-                this.ExpressionCollection[f] = expressions;
-            }
-            else
-            {
-                this.ExpressionCollection.Add(f, expressions);
+                // match expressions to navigation
+                var first = boundNavigationsList.First();
+                this.ExpressionCollection.AddOrUpdate(first, replaced.Expressions);
             }
 
             return boundNavigationsList;

@@ -85,7 +85,7 @@ namespace EntityFrameworkCore.IncludeFilter
         class PrivateIncludeExpressionVisitor : ExpressionVisitor
         {
             private readonly Type _returnType;
-            public HashSet<Expression> Expressions { get; }
+            private HashSet<Expression> Expressions { get; }
 
             public PrivateIncludeExpressionVisitor(Type returnType)
             {

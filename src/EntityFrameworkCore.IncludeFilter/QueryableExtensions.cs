@@ -4,19 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Query;
-using Microsoft.EntityFrameworkCore.Query.Expressions;
-using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal;
-using Microsoft.EntityFrameworkCore.Query.Internal;
-using Microsoft.EntityFrameworkCore.Storage;
-using Remotion.Linq;
-using Remotion.Linq.Parsing.ExpressionVisitors.Transformation;
 using Remotion.Linq.Parsing.ExpressionVisitors.TreeEvaluation;
-using Remotion.Linq.Parsing.Structure;
-using Remotion.Linq.Parsing.Structure.ExpressionTreeProcessors;
-using Remotion.Linq.Parsing.Structure.NodeTypeProviders;
-using Microsoft.EntityFrameworkCore;
 
 namespace EntityFrameworkCore.IncludeFilter
 {
@@ -67,10 +56,32 @@ namespace EntityFrameworkCore.IncludeFilter
                         new[] { source.Expression, Expression.Quote(navigationPropertyPath) })));
         }
 
-        //internal static readonly MethodInfo ThenIncludeAfterCollectionMethodInfo
-        //    = typeof(QueryableExtensions)
-        //        .GetTypeInfo().GetDeclaredMethods(nameof(QueryableExtensions.ThenInclude))
-        //        .Single(mi => !mi.GetParameters()[0].ParameterType.GenericTypeArguments[1].IsGenericParameter);
+        public static IIncludableQueryable<TEntity, TProperty> ThenIncludeWithFilter<TEntity, TPreviousProperty, TProperty>(this IIncludableQueryable<TEntity, IEnumerable<TPreviousProperty>> source, Expression<System.Func<TPreviousProperty, TProperty>> navigationPropertyPath)
+            where TEntity : class
+        {
+            return new IncludableQueryable< TEntity, TProperty > (
+                 source.Provider.CreateQuery<TEntity>(
+                     Expression.Call(
+                         null,
+                         ThenIncludeAfterEnumerableMethodInfo.MakeGenericMethod(typeof(TEntity), typeof(TPreviousProperty), typeof(TProperty)),
+                         new[] { source.Expression, Expression.Quote(navigationPropertyPath) })));
+        }
+
+        public static IIncludableQueryable<TEntity, TProperty> ThenInclude<TEntity, TPreviousProperty, TProperty>(this IIncludableQueryable<TEntity, IEnumerable<TPreviousProperty>> source, Expression<System.Func<TPreviousProperty, TProperty>> navigationPropertyPath)
+            where TEntity : class
+        {
+            return new IncludableQueryable<TEntity, TProperty>(
+                 source.Provider.CreateQuery<TEntity>(
+                     Expression.Call(
+                         null,
+                         ThenIncludeAfterEnumerableMethodInfo.MakeGenericMethod(typeof(TEntity), typeof(TPreviousProperty), typeof(TProperty)),
+                         new[] { source.Expression, Expression.Quote(navigationPropertyPath) })));
+        }
+
+        internal static readonly MethodInfo ThenIncludeAfterEnumerableMethodInfo
+            = typeof(QueryableExtensions)
+                .GetTypeInfo().GetDeclaredMethods(nameof(ThenIncludeWithFilter))
+                .Single(mi => !mi.GetParameters()[0].ParameterType.GenericTypeArguments[1].IsGenericParameter);
 
         //internal static readonly MethodInfo ThenIncludeAfterReferenceMethodInfo
         //    = typeof(QueryableExtensions)
@@ -102,42 +113,6 @@ namespace EntityFrameworkCore.IncludeFilter
         }
         #endregion
 
-        public partial class ApiCompilationFilter : EvaluatableExpressionFilterBase { }
-
-        public static SelectExpression Compile(this DbContext dbContext, Expression linqExpression)
-        {
-            IDatabaseProviderServices databaseProviderServices = dbContext.GetService<IDatabaseProviderServices>();
-            QueryCompilationContext compilationContext = databaseProviderServices.QueryCompilationContextFactory
-                .Create(async: false);
-            INodeTypeProvider nodeTypeProvider = dbContext.GetService<MethodInfoBasedNodeTypeRegistry>();
-            IQueryContextFactory queryContextFactory = dbContext.GetService<IQueryContextFactory>();
-            QueryContext queryContext = queryContextFactory.Create();
-            ISensitiveDataLogger<QueryCompiler> logger = dbContext.GetService<ISensitiveDataLogger<QueryCompiler>>();
-            linqExpression = ParameterExtractingExpressionVisitor.ExtractParameters(
-                linqExpression, queryContext, new ApiCompilationFilter(), logger);
-            QueryParser queryParser = new QueryParser(new ExpressionTreeParser(
-                nodeTypeProvider: nodeTypeProvider,
-                processor: new CompoundExpressionTreeProcessor(new IExpressionTreeProcessor[]
-                {
-                new PartialEvaluatingExpressionTreeProcessor(new ApiCompilationFilter()),
-                new TransformingExpressionTreeProcessor(ExpressionTransformerRegistry.CreateDefault())
-                })));
-            QueryModel queryModel = queryParser.GetParsedQuery(linqExpression);
-
-            RelationalQueryModelVisitor queryModelVisitor = (RelationalQueryModelVisitor)compilationContext
-                .CreateQueryModelVisitor();
-            Type resultType = queryModel.GetResultType();
-            if (resultType.IsConstructedGenericType && resultType.GetGenericTypeDefinition() == typeof(IQueryable<>))
-            {
-                resultType = resultType.GenericTypeArguments.Single();
-            }
-            queryModelVisitor.GetType()
-                .GetMethod(nameof(RelationalQueryModelVisitor.CreateQueryExecutor))
-                .MakeGenericMethod(resultType)
-                .Invoke(queryModelVisitor, new object[] { queryModel });
-            SelectExpression databaseExpression = queryModelVisitor.TryGetQuery(queryModel.MainFromClause);
-            databaseExpression.QuerySource = queryModel.MainFromClause;
-            return databaseExpression;
-        }
+        public class ApiCompilationFilter : EvaluatableExpressionFilterBase { }
     }
 }
