@@ -1,25 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Extensions.Internal;
 using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.Query.Expressions;
 using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors;
 using Microsoft.EntityFrameworkCore.Query.ExpressionVisitors.Internal;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.EntityFrameworkCore.Query.Sql;
-using Microsoft.EntityFrameworkCore.Utilities;
 using Remotion.Linq.Clauses;
-using Remotion.Linq.Parsing.Structure;
 
 namespace EntityFrameworkCore.IncludeFilter
 {
@@ -317,6 +312,14 @@ namespace EntityFrameworkCore.IncludeFilter
                                     querySource),
                                 querySource: null);
 
+                    //Add more prediction
+                    if (_collection.HasKey(navigation) && _collection[navigation].Count > 0)
+                    {
+                        var expressions = _collection[navigation];
+                        var alias = TryParseExpression(targetTableExpression, targetEntityType, expressions);
+                        AddToPredicate(targetSelectExpression, alias);
+                    }
+
                     if (canGenerateExists)
                     {
                         var subqueryExpression = selectExpression.Clone();
@@ -336,14 +339,6 @@ namespace EntityFrameworkCore.IncludeFilter
                         var existsPredicateExpression = new ExistsExpression(subqueryExpression);
 
                         AddToPredicate(targetSelectExpression, existsPredicateExpression);
-
-                        //Add more prediction
-                        if (_collection.HasKey(navigation) && _collection[navigation].Count > 0)
-                        {
-                            var expressions = _collection[navigation];
-                            var alias = TryParseExpression(targetTableExpression, targetEntityType, expressions);
-                            AddToPredicate(targetSelectExpression, alias);
-                        }
 
                         AddToPredicate(subqueryExpression, BuildJoinEqualityExpression(navigation, targetTableExpression, subqueryTable, querySource));
 

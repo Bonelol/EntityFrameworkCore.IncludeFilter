@@ -1,15 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
-using Microsoft.EntityFrameworkCore.Query.Internal;
 using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
-using Remotion.Linq.Parsing.Structure;
 using Remotion.Linq.Parsing.Structure.IntermediateModel;
 
 namespace EntityFrameworkCore.IncludeFilter
@@ -28,14 +24,11 @@ namespace EntityFrameworkCore.IncludeFilter
         };
 
         private readonly LambdaExpression _navigationPropertyPathLambda;
-        private readonly HashSet<Expression> _expressions;
+        private readonly Dictionary<string, HashSet<Expression>> _expressions;
 
         public ReplaceIncludeExpressionNode(MethodCallExpressionParseInfo parseInfo, LambdaExpression navigationPropertyPathLambda) : base(parseInfo, null, null)
         {
-            var visitor = new PrivateIncludeExpressionVisitor(navigationPropertyPathLambda.ReturnType);
-            visitor.Visit(parseInfo.ParsedExpression);
-            _expressions = new HashSet<Expression>();
-            //_expressions = visitor.Expressions;
+            _expressions = new Dictionary<string, HashSet<Expression>>();
             _navigationPropertyPathLambda = navigationPropertyPathLambda;
         }
 
@@ -49,15 +42,15 @@ namespace EntityFrameworkCore.IncludeFilter
             if (_navigationPropertyPathLambda.Body.NodeType == ExpressionType.Extension)
             {
                 var sub = (SubQueryExpression)_navigationPropertyPathLambda.Body;
+                var whereClause = (WhereClause)sub.QueryModel.BodyClauses.First();
                 body = sub.QueryModel.MainFromClause.FromExpression;
 
-                var whereClause = (WhereClause) sub.QueryModel.BodyClauses.First();
-                _expressions.Add(whereClause.Predicate);
-
-                //var ee = (QuerySourceReferenceExpression) ((UnaryExpression) whereClause.Predicate).Operand;
-                //var querySource = (MainFromClause) ee.ReferencedQuerySource;
-                //var newSource = Activator.CreateInstance(typeof(EntityQueryable<>).MakeGenericType(querySource.ItemType));
-                //querySource.FromExpression = Expression.Constant(newSource);
+                var member = body as MemberExpression;
+                if (member != null)
+                {
+                    var name = $"{member.Member.DeclaringType.FullName}-{member.Member.Name}";
+                    _expressions.Add(name, new HashSet<Expression>(new[] { whereClause.Predicate }));
+                }
             }
 
             var navigationPropertyPath = Resolve(_navigationPropertyPathLambda.Parameters[0], body, clauseGenerationContext) as MemberExpression;
@@ -80,53 +73,6 @@ namespace EntityFrameworkCore.IncludeFilter
         public override Expression Resolve(ParameterExpression inputParameter, Expression expressionToBeResolved, ClauseGenerationContext clauseGenerationContext)
         {
             return Source.Resolve(inputParameter, expressionToBeResolved, clauseGenerationContext);
-        }
-
-        class PrivateIncludeExpressionVisitor : ExpressionVisitor
-        {
-            private readonly Type _returnType;
-            private HashSet<Expression> Expressions { get; }
-
-            public PrivateIncludeExpressionVisitor(Type returnType)
-            {
-                _returnType = returnType;
-                Expressions = new HashSet<Expression>();
-            }
-
-            protected override Expression VisitMethodCall(MethodCallExpression node)
-            {
-                if (node.Method.Name == "IncludeWithFilter")
-                {
-                    var where = new PrivateIncludeWhereExpressionVisitor(_returnType);
-                    where.Visit(node);
-
-                    Expressions.UnionWith(where.Expressions);;
-
-                    return node;
-                }
-                return base.VisitMethodCall(node);
-            }
-        }
-
-        class PrivateIncludeWhereExpressionVisitor : ExpressionVisitor
-        {
-            private readonly Type _returnType;
-            public HashSet<Expression> Expressions { get; }
-
-            public PrivateIncludeWhereExpressionVisitor(Type returnType)
-            {
-                _returnType = returnType;
-                Expressions = new HashSet<Expression>();
-            }
-
-            protected override Expression VisitMethodCall(MethodCallExpression node)
-            {
-                if (node.Method.Name == "Where" && node.Type == _returnType)
-                {
-                    Expressions.Add(node.Arguments[1]);
-                }
-                return base.VisitMethodCall(node);
-            }
         }
     }
 }

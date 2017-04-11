@@ -65,7 +65,7 @@ namespace EntityFrameworkCore.IncludeFilter
 
             var includeSpecifications
                 = QueryCompilationContext.QueryAnnotations
-                    .OfType<IncludeResultOperator>()
+                    .OfType<ReplaceIncludeResultOperator>()
                     .Select(includeResultOperator =>
                     {
                         var navigationPath
@@ -111,10 +111,9 @@ namespace EntityFrameworkCore.IncludeFilter
         }
 
         /// <summary>
-        ///    Copyed from EntityFramework Core source code
+        ///    Copied from EntityFramework Core source code
         /// </summary>
-        private IEnumerable<INavigation> BindChainedNavigations(
-            IEnumerable<INavigation> boundNavigations, IncludeResultOperator includeResultOperator)
+        private IEnumerable<INavigation> BindChainedNavigations(IEnumerable<INavigation> boundNavigations, IncludeResultOperator includeResultOperator)
         {
             var boundNavigationsList = boundNavigations.ToList();
 
@@ -138,8 +137,15 @@ namespace EntityFrameworkCore.IncludeFilter
             if (replaced != null)
             {
                 // match expressions to navigation
-                var first = boundNavigationsList.First();
-                this.ExpressionCollection.AddOrUpdate(first, replaced.Expressions);
+                foreach (var navigation in boundNavigationsList)
+                {
+                    var name = $"{navigation.DeclaringEntityType.Name}-{navigation.Name}";
+                    HashSet<Expression> expressions;
+                    if (replaced.Expressions.TryGetValue(name, out expressions))
+                    {
+                        this.ExpressionCollection.AddOrUpdate(navigation, expressions);
+                    }
+                }
             }
 
             return boundNavigationsList;
