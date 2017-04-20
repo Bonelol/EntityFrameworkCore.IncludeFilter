@@ -10,7 +10,7 @@ namespace EntityFrameworkCore.IncludeFilter
 {
     class ReplaceSqlServerQueryModelVisitorFactory : SqlServerQueryModelVisitorFactory
     {
-        public INavigationExpressionCollection ExpressionCollection { get; set; }
+        private INavigationExpressionCollection ExpressionCollection { get; }
 
         public ReplaceSqlServerQueryModelVisitorFactory(IQueryOptimizer queryOptimizer
             , INavigationRewritingExpressionVisitorFactory navigationRewritingExpressionVisitorFactory

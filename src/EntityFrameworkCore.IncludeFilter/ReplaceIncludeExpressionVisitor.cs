@@ -18,6 +18,22 @@ using Remotion.Linq.Clauses;
 
 namespace EntityFrameworkCore.IncludeFilter
 {
+    /// <summary>
+    /// Copyright (c) .NET Foundation. All rights reserved.
+    ///
+    /// Modified by Qinglin (Max) Meng
+    ///  
+    /// Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+    /// these files except in compliance with the License. You may obtain a copy of the
+    /// License at
+    ///
+    /// http://www.apache.org/licenses/LICENSE-2.0
+    ///
+    /// Unless required by applicable law or agreed to in writing, software distributed
+    /// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+    /// CONDITIONS OF ANY KIND, either express or implied. See the License for the
+    /// specific language governing permissions and limitations under the License.
+    /// </summary>
     public class ReplaceIncludeExpressionVisitor : ExpressionVisitorBase
     {
         private readonly ISelectExpressionFactory _selectExpressionFactory;
@@ -163,6 +179,13 @@ namespace EntityFrameworkCore.IncludeFilter
             = typeof(ReplaceIncludeExpressionVisitor).GetTypeInfo()
                 .GetDeclaredMethod(nameof(CreateRelatedEntitiesLoaders));
 
+        /// <summary>
+        /// Convert expressions and append to end.
+        /// </summary>
+        /// <typeparam name="TRelatedEntitiesLoader"></typeparam>
+        /// <param name="querySource"></param>
+        /// <param name="navigationPath"></param>
+        /// <returns></returns>
         private IReadOnlyList<Func<QueryContext, TRelatedEntitiesLoader>> CreateRelatedEntitiesLoaders<TRelatedEntitiesLoader>(
             IQuerySource querySource, IEnumerable<INavigation> navigationPath)
         {

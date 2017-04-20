@@ -11,6 +11,22 @@ using Remotion.Linq.Parsing.Structure.IntermediateModel;
 
 namespace EntityFrameworkCore.IncludeFilter
 {
+    /// <summary>
+    /// Copyright (c) .NET Foundation. All rights reserved.
+    ///
+    /// Modified by Qinglin (Max) Meng
+    ///  
+    /// Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+    /// these files except in compliance with the License. You may obtain a copy of the
+    /// License at
+    ///
+    /// http://www.apache.org/licenses/LICENSE-2.0
+    ///
+    /// Unless required by applicable law or agreed to in writing, software distributed
+    /// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+    /// CONDITIONS OF ANY KIND, either express or implied. See the License for the
+    /// specific language governing permissions and limitations under the License.
+    /// </summary>
     public class ReplaceThenIncludeExpressionNode : ResultOperatorExpressionNodeBase
     {
         private readonly Dictionary<string, HashSet<Expression>> _expressions;
@@ -20,8 +36,7 @@ namespace EntityFrameworkCore.IncludeFilter
         /// </summary>
         public static readonly IReadOnlyCollection<MethodInfo> SupportedMethods = new[]
         {
-            QueryableExtensions.ThenIncludeAfterEnumerableMethodInfo,
-            //EntityFrameworkQueryableExtensions.ThenIncludeAfterReferenceMethodInfo
+            QueryableExtensions.ThenIncludeAfterEnumerableMethodInfo
         };
 
         private readonly LambdaExpression _navigationPropertyPathLambda;
@@ -35,7 +50,10 @@ namespace EntityFrameworkCore.IncludeFilter
             _navigationPropertyPathLambda = navigationPropertyPathLambda;
             _expressions = new Dictionary<string, HashSet<Expression>>();
         }
-        
+
+        /// <summary>
+        ///    Copy from EntityFramework Core source code. Modified to store predict expressions.
+        /// </summary>
         protected override void ApplyNodeSpecificSemantics(QueryModel queryModel, ClauseGenerationContext clauseGenerationContext)
         {
             var includeResultOperator = (ReplaceIncludeResultOperator)clauseGenerationContext.GetContextInfo(Source);
@@ -49,7 +67,10 @@ namespace EntityFrameworkCore.IncludeFilter
             clauseGenerationContext.AddContextInfo(this, includeResultOperator);
         }
 
-        public PropertyInfo[] GetComplexPropertyAccess(LambdaExpression propertyAccessExpression)
+        /// <summary>
+        ///    Copy from EntityFramework Core source code. Modified to store predict expressions.
+        /// </summary>
+        private PropertyInfo[] GetComplexPropertyAccess(LambdaExpression propertyAccessExpression)
         {
             Expression body = propertyAccessExpression.Body;
 
@@ -111,7 +132,7 @@ namespace EntityFrameworkCore.IncludeFilter
         /// <summary>
         ///    Copy from EntityFramework Core source code
         /// </summary>
-        public static Expression RemoveConvert(Expression expression)
+        private static Expression RemoveConvert(Expression expression)
         {
             while ((expression != null)
                    && ((expression.NodeType == ExpressionType.Convert)

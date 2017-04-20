@@ -8,6 +8,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F9E5882A-3D45-41DC-AC6A-14C3B6E5737A}"
 	ProjectSection(SolutionItems) = preProject
 		global.json = global.json
+		LICENSE.txt = LICENSE.txt
+		NOTICE.txt = NOTICE.txt
 	EndProjectSection
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "EntityFrameworkCore.IncludeFilter", "src\EntityFrameworkCore.IncludeFilter\EntityFrameworkCore.IncludeFilter.xproj", "{5BA99A02-8047-414D-B88D-46E8CDD1C568}"

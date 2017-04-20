@@ -12,9 +12,6 @@ namespace EntityFrameworkCore.IncludeFilter
 {
     public class ReplaceIncludeExpressionNode : ResultOperatorExpressionNodeBase
     {
-        /// <summary>
-        ///     Add ef support for our IncludeWithFilter method
-        /// </summary>
         public static readonly IReadOnlyCollection<MethodInfo> SupportedMethods = new[]
         {
             typeof(QueryableExtensions)
@@ -32,9 +29,6 @@ namespace EntityFrameworkCore.IncludeFilter
             _navigationPropertyPathLambda = navigationPropertyPathLambda;
         }
 
-        /// <summary>
-        ///    Copy from EntityFramework Core source code
-        /// </summary>
         protected override ResultOperatorBase CreateResultOperator(ClauseGenerationContext clauseGenerationContext)
         {
             Expression body = _navigationPropertyPathLambda.Body;
@@ -57,8 +51,7 @@ namespace EntityFrameworkCore.IncludeFilter
 
             if (navigationPropertyPath == null)
             {
-                throw new InvalidOperationException(
-                    CoreStrings.InvalidComplexPropertyExpression(_navigationPropertyPathLambda));
+                throw new InvalidOperationException(CoreStrings.InvalidComplexPropertyExpression(_navigationPropertyPathLambda));
             }
 
             var includeResultOperator = new ReplaceIncludeResultOperator(navigationPropertyPath, _expressions);
@@ -67,9 +60,6 @@ namespace EntityFrameworkCore.IncludeFilter
             return includeResultOperator;
         }
 
-        /// <summary>
-        ///    Copy from EntityFramework Core source code
-        /// </summary>
         public override Expression Resolve(ParameterExpression inputParameter, Expression expressionToBeResolved, ClauseGenerationContext clauseGenerationContext)
         {
             return Source.Resolve(inputParameter, expressionToBeResolved, clauseGenerationContext);

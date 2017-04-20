@@ -21,8 +21,7 @@ namespace EntityFrameworkCore.IncludeFilter
 {
     class ReplaceSqlServerQueryModelVisitor : SqlServerQueryModelVisitor
     {
-        public INavigationExpressionCollection ExpressionCollection { get; set; }
-        private ISqlTranslatingExpressionVisitorFactory _sqlTranslatingExpressionVisitorFactory;
+        private INavigationExpressionCollection ExpressionCollection { get; set; }
 
         public ReplaceSqlServerQueryModelVisitor(IQueryOptimizer queryOptimizer
             , INavigationRewritingExpressionVisitorFactory navigationRewritingExpressionVisitorFactory
@@ -50,7 +49,6 @@ namespace EntityFrameworkCore.IncludeFilter
             , INavigationExpressionCollection collection) : base(queryOptimizer, navigationRewritingExpressionVisitorFactory, subQueryMemberPushDownExpressionVisitor, querySourceTracingExpressionVisitorFactory, entityResultFindingExpressionVisitorFactory, taskBlockingExpressionVisitor, memberAccessBindingExpressionVisitorFactory, orderingExpressionVisitorFactory, projectionExpressionVisitorFactory, entityQueryableExpressionVisitorFactory, queryAnnotationExtractor, resultOperatorHandler, entityMaterializerSource, expressionPrinter, relationalAnnotationProvider, includeExpressionVisitorFactory, sqlTranslatingExpressionVisitorFactory, compositePredicateExpressionVisitorFactory, conditionalRemovingExpressionVisitorFactory, queryFlattenerFactory, contextOptions, queryCompilationContext, parentQueryModelVisitor)
         {
             ExpressionCollection = collection;
-            _sqlTranslatingExpressionVisitorFactory = sqlTranslatingExpressionVisitorFactory;
         }
 
         /// <summary>
