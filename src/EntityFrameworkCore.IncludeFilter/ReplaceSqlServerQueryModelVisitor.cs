@@ -63,7 +63,7 @@ namespace EntityFrameworkCore.IncludeFilter
 
             var includeSpecifications
                 = QueryCompilationContext.QueryAnnotations
-                    .OfType<ReplaceIncludeResultOperator>()
+                    .OfType<IncludeResultOperator>()
                     .Select(includeResultOperator =>
                     {
                         var navigationPath
