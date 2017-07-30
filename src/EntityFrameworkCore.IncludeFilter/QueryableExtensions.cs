@@ -59,13 +59,24 @@ namespace EntityFrameworkCore.IncludeFilter
         public static IIncludableQueryable<TEntity, TProperty> ThenIncludeWithFilter<TEntity, TPreviousProperty, TProperty>(this IIncludableQueryable<TEntity, IEnumerable<TPreviousProperty>> source, Expression<System.Func<TPreviousProperty, TProperty>> navigationPropertyPath)
             where TEntity : class
         {
-            return new IncludableQueryable< TEntity, TProperty > (
-                 source.Provider.CreateQuery<TEntity>(
-                     Expression.Call(
-                         null,
-                         ThenIncludeAfterEnumerableMethodInfo.MakeGenericMethod(typeof(TEntity), typeof(TPreviousProperty), typeof(TProperty)),
-                         new[] { source.Expression, Expression.Quote(navigationPropertyPath) })));
+            return new IncludableQueryable<TEntity, TProperty>(
+                source.Provider.CreateQuery<TEntity>(
+                    Expression.Call(
+                        null,
+                        ThenIncludeAfterEnumerableMethodInfo.MakeGenericMethod(typeof(TEntity), typeof(TPreviousProperty), typeof(TProperty)),
+                        new[] { source.Expression, Expression.Quote(navigationPropertyPath) })));
         }
+
+        //public static IIncludableQueryable<TEntity, TProperty> ThenIncludeWithFilter<TEntity, TPreviousProperty, TProperty>(this IIncludableQueryable<TEntity, IEnumerable<TPreviousProperty>> source, Expression<System.Func<TPreviousProperty, TProperty>> navigationPropertyPath)
+        //    where TEntity : class
+        //{
+        //    return new IncludableQueryable< TEntity, TProperty > (
+        //         source.Provider.CreateQuery<TEntity>(
+        //             Expression.Call(
+        //                 null,
+        //                 ThenIncludeAfterEnumerableMethodInfo.MakeGenericMethod(typeof(TEntity), typeof(TPreviousProperty), typeof(TProperty)),
+        //                 new[] { source.Expression, Expression.Quote(navigationPropertyPath) })));
+        //}
 
         public static IIncludableQueryable<TEntity, TProperty> ThenInclude<TEntity, TPreviousProperty, TProperty>(this IIncludableQueryable<TEntity, IEnumerable<TPreviousProperty>> source, Expression<System.Func<TPreviousProperty, TProperty>> navigationPropertyPath)
             where TEntity : class

@@ -33,9 +33,14 @@ namespace EntityFrameworkCore.IncludeFilter
         {
             Expression body = _navigationPropertyPathLambda.Body;
 
-            if (_navigationPropertyPathLambda.Body.NodeType == ExpressionType.Extension)
+            if (body.NodeType == ExpressionType.Convert)
             {
-                var sub = (SubQueryExpression)_navigationPropertyPathLambda.Body;
+                body = ((UnaryExpression)body).Operand;
+            }
+
+            if (body.NodeType == ExpressionType.Extension)
+            {
+                var sub = (SubQueryExpression) body;
                 var whereClause = (WhereClause)sub.QueryModel.BodyClauses.First();
                 body = sub.QueryModel.MainFromClause.FromExpression;
 

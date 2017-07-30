@@ -74,9 +74,14 @@ namespace EntityFrameworkCore.IncludeFilter
         {
             Expression body = propertyAccessExpression.Body;
 
-            if (propertyAccessExpression.Body.NodeType == ExpressionType.Extension)
+            if (body.NodeType == ExpressionType.Convert)
             {
-                var sub = (SubQueryExpression)propertyAccessExpression.Body;
+                body = ((UnaryExpression)body).Operand;
+            }
+
+            if (body.NodeType == ExpressionType.Extension)
+            {
+                var sub = (SubQueryExpression)body;
                 var whereClause = (WhereClause)sub.QueryModel.BodyClauses.First();
 
                 body = sub.QueryModel.MainFromClause.FromExpression;
