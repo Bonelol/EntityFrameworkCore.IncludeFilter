@@ -8,13 +8,12 @@ How to use:
 ```csharp
 public void ConfigureServices(IServiceCollection services)
 { 
-  ...
+    ...
 
-  services.AddDbContext<DbContext>(options => 
-    options.UseSqlServer("connection_string")
-    .AddIncludeWithFilterMethods());
-  
-  ...
+    services.AddDbContext<DbContext>(options => options.UseSqlServer("connection_string")
+      .AddIncludeWithFilterMethods());
+
+    ...
 }
 ``` 
 
