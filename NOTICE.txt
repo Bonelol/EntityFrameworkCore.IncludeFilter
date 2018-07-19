@@ -1,5 +1,5 @@
 This product includes code from EntityFrameworkCore under Apache License
-https://github.com/aspnet/EntityFramework
+https://github.com/aspnet/EntityFrameworkCore
 
 Copyright (c) .NET Foundation. All rights reserved.
 
